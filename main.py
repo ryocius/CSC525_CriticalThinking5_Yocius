@@ -31,7 +31,7 @@ def synonymReplace(text, index):
         if tag.startswith('NN') or tag.startswith('VB') or tag.startswith('JJ'):  # Replaces nouns, adjectives, and verbs
             synonyms = getSynonym(word)
             if synonyms:
-                if len(synonyms) > i:
+                if len(synonyms) > index:
                     newWords[i] = synonyms[index]
                 else:
                     newWords[i] = synonyms[0]
@@ -65,13 +65,25 @@ def augmentData(df):
     # Randomly insert keywords to increase weight
     # Tweak n to increase or decrease how many keywords are added
     keywords = df['keywords'].tolist()
-    df['randomInserts'] = df['ancient_text'].apply(lambda text: randomInsert(text, keywords, n=3))
+    df['randomInserts_notes'] = df['notes'].apply(lambda text: randomInsert(text, keywords, n=3))
+    df['randomInserts_contextual_meaning'] = df['contextual_meaning'].apply(lambda text: randomInsert(text, keywords, n=3))
+    df['randomInserts_ancient_text'] = df['ancient_text'].apply(lambda text: randomInsert(text, keywords, n=3))
 
     # Synonym replacement, word swapping, and random deletes
     for i in range(0,3):
-        df[f'synonyms{i}'] = df['randomInserts'].apply(lambda text: synonymReplace(text, i))
-        df[f'swaps{i}'] = df[f'synonyms{i}'].apply(lambda text: randomSwap(text, n=15))
-        df[f'deletes{i}'] = df[f'synonyms{i}'].apply(lambda text: randomDelete(text, p=.1))
+        df[f'synonyms_notes_{i}'] = df['randomInserts_notes'].apply(lambda text: synonymReplace(text, i))
+        df[f'swaps_notes_{i}'] = df[f'synonyms_notes_{i}'].apply(lambda text: randomSwap(text, n=15))
+        df[f'deletes_notes_{i}'] = df[f'synonyms_notes_{i}'].apply(lambda text: randomDelete(text, p=.1))
+
+    for i in range(0, 3):
+        df[f'swaps_contextual_meaning_{i}'] = df['randomInserts_contextual_meaning'].apply(lambda text: synonymReplace(text, i))
+        df[f'swaps_contextual_meaning_{i}'] = df[f'swaps_contextual_meaning_{i}'].apply(lambda text: randomSwap(text, n=15))
+        df[f'deletes_contextual_meaning_{i}'] = df[f'swaps_contextual_meaning_{i}'].apply(lambda text: randomDelete(text, p=.1))
+
+    for i in range(0, 3):
+        df[f'synonyms_ancient_text_{i}'] = df['randomInserts_ancient_text'].apply(lambda text: synonymReplace(text, i))
+        df[f'swaps_ancient_text_{i}'] = df[f'synonyms_ancient_text_{i}'].apply(lambda text: randomSwap(text, n=15))
+        df[f'deletes_ancient_text_{i}'] = df[f'synonyms_ancient_text_{i}'].apply(lambda text: randomDelete(text, p=.1))
 
     df.to_csv('augmented.csv', index=False)
 
@@ -84,12 +96,14 @@ def main():
         df.to_csv('original.csv', index= False)
         print(f"Original Columns: {df.columns}")
         print(f"The original dataset has {dataset['train'].num_rows} rows of data and {dataset['train'].num_columns} columns of data")
-        print(f"The original dataset is {os.path.getsize('original.csv')}")
+
     else:
         df = pd.read_csv("original.csv")
         print(f"Original Columns: {df.columns}")
         print(f"The original dataset has {df.shape[0]} rows of data and {df.shape[1]} columns of data")
-        print(f"The original dataset is {os.path.getsize('original.csv')} bytes")
+
+    inSize = os.path.getsize('original.csv')
+    print(f"The original dataset is {inSize} bytes")
 
     if os.path.exists("augmented.csv"):
         os.remove("augmented.csv")
@@ -99,7 +113,9 @@ def main():
     aug = pd.read_csv("augmented.csv")
     print(f"\n\nAugmented Columns: {aug.columns}")
     print(f"The augmented dataset has {aug.shape[0]} rows of data and {aug.shape[1]} columns of data")
-    print(f"The augmented dataset is {os.path.getsize('augmented.csv')} bytes")
+    outSize = os.path.getsize('augmented.csv')
+    print(f"The augmented dataset is {outSize} bytes")
+    print(f"The augmented dataset is roughly {round(outSize/inSize)} times bigger")
 
 
 main()
