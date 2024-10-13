@@ -87,7 +87,7 @@ def main():
         print(f"The original dataset is {os.path.getsize('original.csv')}")
     else:
         df = pd.read_csv("original.csv")
-        print(f"Augmented Columns: {df.columns}")
+        print(f"Original Columns: {df.columns}")
         print(f"The original dataset has {df.shape[0]} rows of data and {df.shape[1]} columns of data")
         print(f"The original dataset is {os.path.getsize('original.csv')} bytes")
 
